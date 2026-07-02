@@ -29,6 +29,9 @@ return {
     { "<leader>zm", "<cmd>ZenMode<cr>", desc = "Toggle Zen Mode" },
   },
   opts = {
+    window = {
+      width = 1,
+    },
     on_open = function()
       set_tmux_zoom(true)
       set_wezterm_zen("15")
