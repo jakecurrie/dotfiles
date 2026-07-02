@@ -127,6 +127,19 @@ return {
 
         vim.diagnostic.config({
             -- update_in_insert = true,
+            severity_sort = true,
+            signs = {
+                text = {
+                    [vim.diagnostic.severity.ERROR] = "",
+                    [vim.diagnostic.severity.WARN] = "",
+                    [vim.diagnostic.severity.INFO] = "",
+                    [vim.diagnostic.severity.HINT] = "",
+                },
+            },
+            virtual_text = {
+                prefix = "●",
+                spacing = 2,
+            },
             float = {
                 focusable = false,
                 style = "minimal",
@@ -138,6 +151,5 @@ return {
         })
     end
 }
-
 
 
