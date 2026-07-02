@@ -69,7 +69,7 @@ return {
               path = vim.fn.fnamemodify(path, ":~")
             end
 
-            return vim.fn.pathshorten(path)
+            return path
           end,
         }
       end
