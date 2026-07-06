@@ -28,7 +28,18 @@ return {
             cmp_lsp.default_capabilities())
 
         require("fidget").setup({})
-        require("mason").setup()
+        require("mason").setup({
+            registries = {
+                "github:mason-org/mason-registry",
+                "github:Crashdummyy/mason-registry", -- provides the "roslyn" package (stable, matches vscode)
+            },
+        })
+
+        -- Applies to every server enabled below unless overridden per-server.
+        vim.lsp.config("*", {
+            capabilities = capabilities,
+        })
+
         require("mason-lspconfig").setup({
             ensure_installed = {
                 "lua_ls",
@@ -37,70 +48,68 @@ return {
                 "vtsls",
                 "basedpyright",
                 "ruff",
-                "roslyn-language-server",
+                -- "roslyn" is not listed here; mason-lspconfig has no mapping for packages
+                -- from the Crashdummyy registry, so it must be installed manually with
+                -- :MasonInstall roslyn and configured separately below.
             },
-            handlers = {
-                function(server_name) -- default handler (optional)
-                    require("lspconfig")[server_name].setup {
-                        capabilities = capabilities
-                    }
-                end,
+            automatic_enable = true,
+        })
 
-                zls = function()
-                    local lspconfig = require("lspconfig")
-                    lspconfig.zls.setup({
-                        root_dir = lspconfig.util.root_pattern(".git", "build.zig", "zls.json"),
-                        settings = {
-                            zls = {
-                                enable_inlay_hints = true,
-                                enable_snippets = true,
-                                warn_style = true,
-                            },
-                        },
-                    })
-                    vim.g.zig_fmt_parse_errors = 0
-                    vim.g.zig_fmt_autosave = 0
-
-                end,
-                ["lua_ls"] = function()
-                    local lspconfig = require("lspconfig")
-
-                    lspconfig.lua_ls.setup {
-                        capabilities = capabilities,
-                        settings = {
-                            Lua = {
-                                runtime = {
-                                    version = 'LuaJIT',
-                                },
-                                diagnostics = {
-                                    globals = { 'vim' },
-                                },
-                                workspace = {
-                                    library = vim.api.nvim_get_runtime_file("", true),
-                                    checkThirdParty = false,
-                                },
-                                format = {
-                                    enable = true,
-                                    -- Put format options here
-                                    -- NOTE: the value should be STRING!!
-                                    defaultConfig = {
-                                        indent_style = "space",
-                                        indent_size = "2",
-                                    }
-                                },
-                            }
+        vim.lsp.config("lua_ls", {
+            settings = {
+                Lua = {
+                    runtime = {
+                        version = 'LuaJIT',
+                    },
+                    diagnostics = {
+                        globals = { 'vim' },
+                    },
+                    workspace = {
+                        library = vim.api.nvim_get_runtime_file("", true),
+                        checkThirdParty = false,
+                    },
+                    format = {
+                        enable = true,
+                        -- The value must be a string, not a number.
+                        defaultConfig = {
+                            indent_style = "space",
+                            indent_size = "2",
                         }
-                    }
-                end,
-                ["tailwindcss"] = function()
-                    local lspconfig = require("lspconfig")
-                    lspconfig.tailwindcss.setup({
-                        capabilities = capabilities,
-                        filetypes = { "html", "css", "scss", "javascript", "javascriptreact", "typescript", "typescriptreact", "vue", "svelte", "heex" },
-                    })
-                end,
+                    },
+                }
             }
         })
+
+        vim.lsp.config("zls", {
+            root_dir = require("lspconfig.util").root_pattern(".git", "build.zig", "zls.json"),
+            settings = {
+                zls = {
+                    enable_inlay_hints = true,
+                    enable_snippets = true,
+                    warn_style = true,
+                },
+            },
+        })
+        vim.g.zig_fmt_parse_errors = 0
+        vim.g.zig_fmt_autosave = 0
+
+        vim.lsp.config("tailwindcss", {
+            filetypes = { "html", "css", "scss", "javascript", "javascriptreact", "typescript", "typescriptreact", "vue", "svelte", "heex" },
+        })
+
+        -- roslyn is installed from the Crashdummyy custom registry, which
+        -- mason-lspconfig does not have a mapping for, so automatic_enable
+        -- above will never enable it. Configure and enable it directly.
+        vim.lsp.config("roslyn_ls", {
+            filetypes = { "cs" },
+            settings = {
+                ["csharp|background_analysis"] = {
+                    dotnet_analyzer_diagnostics_scope = "openFiles",
+                    dotnet_compiler_diagnostics_scope = "openFiles",
+                },
+            },
+        })
+        vim.lsp.enable("roslyn_ls")
 
         local cmp_select = { behavior = cmp.SelectBehavior.Select }
 
@@ -130,10 +139,10 @@ return {
             severity_sort = true,
             signs = {
                 text = {
-                    [vim.diagnostic.severity.ERROR] = "",
-                    [vim.diagnostic.severity.WARN] = "",
-                    [vim.diagnostic.severity.INFO] = "",
-                    [vim.diagnostic.severity.HINT] = "",
+                    [vim.diagnostic.severity.ERROR] = "",
+                    [vim.diagnostic.severity.WARN] = "",
+                    [vim.diagnostic.severity.INFO] = "",
+                    [vim.diagnostic.severity.HINT] = "",
                 },
             },
             virtual_text = {
@@ -151,5 +160,3 @@ return {
         })
     end
 }
-
-
